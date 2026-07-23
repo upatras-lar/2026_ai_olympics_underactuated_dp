@@ -1,3 +1,13 @@
+## Real-Time Nonlinear MPC via Sequential Quadratic Programming for Underactuated Double-Pendulum Swing-Up
+
+Submission to the [4th AI Olympics](https://ai-olympics.dfki-bremen.de/).
+
+#### Team
+
+- Nick Karydakis: [nickkarydakis@gmail.com](mailto:nickkarydakis@gmail.com)
+- Konstantinos Chatzilygeroudis: [costashatz@upatras.gr](mailto:costashatz@upatras.gr)
+
+
 ### Usage instructions
 To execute the Pendubot controller, follow these steps.
 
