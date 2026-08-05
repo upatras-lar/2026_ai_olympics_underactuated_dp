@@ -42,8 +42,8 @@ import ssqpy
 # Configuration - adjust to match your setup
 # ---------------------------------------------------------------------------
 
-NON_DISTURBANCE_PKL = "data/swingup_results.pkl"
-DISTURBANCE_PKL = "data-disturbance/swingup_results.pkl"
+NON_DISTURBANCE_PKL = "pendubot/swingup_results.pkl"
+DISTURBANCE_PKL = "pendubot-disturbance/swingup_results.pkl"
 
 TIP_HEIGHT_THRESHOLD = (
     0.09  # matches the "Minimum tip height" line in the plots
@@ -236,20 +236,41 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
     success_rates = [nd_summary["success_rate"], d_summary["success_rate"]]
     uptime_stats = {g: compute_stats(u) for g, u in zip(groups, uptimes)}
 
+    # --- Font sizes (bumped up across the board) ---------------------------
+    BASE_FONT = 15
+    SUPTITLE_FONT = 20
+    TITLE_FONT = 17
+    LABEL_FONT = 16
+    TICK_FONT = 13
+    LEGEND_FONT = 13
+    ANNOT_FONT = 12.5
+    BAR_LABEL_FONT = 17
+
     plt.rcParams.update(
         {
-            "font.size": 11,
+            "font.size": BASE_FONT,
             "axes.edgecolor": "#444444",
             "axes.labelcolor": "#222222",
             "text.color": "#222222",
             "xtick.color": "#222222",
             "ytick.color": "#222222",
+            "xtick.labelsize": TICK_FONT,
+            "ytick.labelsize": TICK_FONT,
         }
     )
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 6), facecolor="white")
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 7.8), facecolor="white")
+    # Reserve generous, explicit space:
+    #   - top=0.78 leaves a dedicated band between the suptitle and the
+    #     axes for the shared legend, so it never sits over plot content.
+    #   - bottom=0.32 leaves room below the axes for the x tick labels
+    #     AND the stats annotation boxes, stacked with a clear gap.
+    fig.subplots_adjust(top=0.78, bottom=0.32, wspace=0.30)
     fig.suptitle(
-        "Pendubot Swing-Up Performance Summary", fontsize=15, fontweight="bold"
+        "Pendubot Swing-Up Performance Summary",
+        fontsize=SUPTITLE_FONT,
+        fontweight="bold",
+        y=0.97,
     )
 
     # --------------------------------------------------------------------
@@ -271,11 +292,11 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
             marker="D",
             markerfacecolor="white",
             markeredgecolor="#333333",
-            markersize=8,
+            markersize=9,
             markeredgewidth=1.4,
             zorder=5,
         ),
-        medianprops=dict(color="#222222", linewidth=2.2, zorder=4),
+        medianprops=dict(color="#222222", linewidth=2.4, zorder=4),
         whiskerprops=dict(color="#555555", linewidth=1.3),
         capprops=dict(color="#555555", linewidth=1.3),
         boxprops=dict(linewidth=1.3),
@@ -296,7 +317,7 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
             color=c,
             edgecolor="white",
             linewidth=0.6,
-            s=45,
+            s=50,
             alpha=0.85,
             zorder=6,
         )
@@ -304,45 +325,37 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
 
-    ax.set_ylabel("Uptime", fontsize=12)
+    ax.set_ylabel("Uptime", fontsize=LABEL_FONT)
     ax.set_title(
-        "Uptime distribution across experiments", fontsize=12.5, pad=12
+        "Uptime distribution across experiments", fontsize=TITLE_FONT, pad=14
     )
-    ax.legend(
-        handles=[
-            plt.Line2D([0], [0], color="#222222", lw=2.2, label="Median"),
-            plt.Line2D(
-                [0],
-                [0],
-                marker="D",
-                color="w",
-                markerfacecolor="white",
-                markeredgecolor="#333333",
-                markersize=8,
-                label="Mean",
-            ),
-        ],
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.02),
-        frameon=False,
-        fontsize=9.5,
-    )
+    ax.tick_params(axis="both", labelsize=TICK_FONT)
 
+    # Small top headroom only, so the mean/median markers near the max
+    # aren't clipped. No bottom extension here -- the annotation text below
+    # is placed in axes-fraction coordinates (see loop below), independent
+    # of the data range, so it can't collide with the tick labels.
     ymin, ymax = ax.get_ylim()
     span = ymax - ymin
-    ax.set_ylim(ymin - 0.28 * span, ymax + 0.05 * span)
+    ax.set_ylim(ymin, ymax + 0.08 * span)
+
+    # Stats annotation boxes, anchored in axes-fraction coordinates well
+    # below the x tick labels (which sit around y=-0.04 to -0.08).
+    n_groups = len(groups)
     for i, g in enumerate(groups):
         s = uptime_stats[g]
+        x_frac = (i + 1 - 0.5) / n_groups
         ax.text(
-            i + 1,
-            ymin - 0.16 * span,
+            x_frac,
+            -0.20,
             f"mean {s['mean']:.3f} \u00b1 {s['std']:.3f}\nmedian={s['median']:.3f}\np25={s['p25']:.3f}   p75={s['p75']:.3f}",
+            transform=ax.transAxes,
             ha="center",
             va="top",
-            fontsize=9,
+            fontsize=ANNOT_FONT,
             color="#333333",
             bbox=dict(
-                boxstyle="round,pad=0.35",
+                boxstyle="round,pad=0.4",
                 facecolor="white",
                 edgecolor="#DDDDDD",
                 linewidth=0.8,
@@ -367,8 +380,11 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
         zorder=3,
     )
     ax2.set_ylim(0, 1.12)
-    ax2.set_ylabel("Success rate", fontsize=12)
-    ax2.set_title("Success rate by experiment type", fontsize=12.5, pad=12)
+    ax2.set_ylabel("Success rate", fontsize=LABEL_FONT)
+    ax2.set_title(
+        "Success rate by experiment type", fontsize=TITLE_FONT, pad=14
+    )
+    ax2.tick_params(axis="both", labelsize=TICK_FONT)
     for spine in ("top", "right"):
         ax2.spines[spine].set_visible(False)
 
@@ -379,12 +395,42 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
             f"{sr:.0%}",
             ha="center",
             va="bottom",
-            fontsize=13,
+            fontsize=BAR_LABEL_FONT,
             fontweight="bold",
             color="#222222",
         )
 
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    # Shared legend for the boxplot symbols, placed at the FIGURE level in
+    # the dedicated band between the suptitle and the axes (see
+    # subplots_adjust(top=0.78) above). Keeping it here -- rather than
+    # inside the left axis -- means it can never overlap the box/scatter
+    # data, the x tick labels, or the stats annotation boxes below.
+    legend_handles = [
+        plt.Line2D([0], [0], color="#222222", lw=2.4, label="Median"),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="D",
+            color="w",
+            markerfacecolor="white",
+            markeredgecolor="#333333",
+            markersize=9,
+            label="Mean",
+        ),
+    ]
+    fig.legend(
+        handles=legend_handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.895),
+        ncol=2,
+        frameon=False,
+        fontsize=LEGEND_FONT,
+    )
+
+    # NOTE: we use fig.subplots_adjust (above) instead of tight_layout here.
+    # tight_layout was squeezing the suptitle and the bottom annotation
+    # boxes right up against the figure edges; explicit top/bottom margins
+    # keep consistent breathing room around the caption and the plot body.
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.show()
 
