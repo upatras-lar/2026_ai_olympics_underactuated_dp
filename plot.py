@@ -1,9 +1,9 @@
 """
-Analyze saved Pendubot swing-up experiment data.
+Analyze saved swing-up experiment data.
 
 Computes, per experiment and averaged across experiments:
   - Uptime:  U = (1/N_ep) * sum_k  I[x_k in X_up]
-             i.e. fraction of logged timesteps the pendubot spent upright.
+             i.e. fraction of logged timesteps the system spent upright.
   - Success: whether the controller swung up and held upright for at
              least HOLD_DURATION seconds (non-disturbance), or additionally
              recovered and re-held upright after every disturbance
@@ -41,16 +41,14 @@ import ssqpy
 # ---------------------------------------------------------------------------
 # Configuration - adjust to match your setup
 # ---------------------------------------------------------------------------
+SYSTEM = "pendubot"  # "pendubot" or "acrobot"
 
-NON_DISTURBANCE_PKL = "pendubot/swingup_results.pkl"
-DISTURBANCE_PKL = "pendubot-disturbance/swingup_results.pkl"
 
-TIP_HEIGHT_THRESHOLD = (
-    0.09  # matches the "Minimum tip height" line in the plots
-)
-HOLD_DURATION = (
-    5.0  # seconds required continuously upright to count as success
-)
+NON_DISTURBANCE_PKL = f"{SYSTEM}/data/swingup_results.pkl"
+DISTURBANCE_PKL = f"{SYSTEM}/data-disturbance/swingup_results.pkl"
+
+TIP_HEIGHT_THRESHOLD = 0.09  # matches the "Minimum tip height" line in the plots
+HOLD_DURATION = 5.0  # seconds required continuously upright to count as success
 
 # Manual fallback if disturbance times aren't stored in the pickle.
 # Outer list: one entry per experiment, in the same order as all_data.
@@ -66,7 +64,7 @@ ssqpy.setSilentMode()
 model = ssqpy.model.Model(
     1,  # horizon doesn't matter here, we only use forwardKinematics
     0.01,
-    urdf_path="pendubot.urdf",
+    urdf_path=f"{SYSTEM}/{SYSTEM}.urdf",
     actuated_joints=[0],
     solver_mode=ssqpy.model.SolverMode.InverseDynamics,
 )
@@ -127,9 +125,7 @@ def evaluate_non_disturbance_experiment(exp_data, exp_timestamps):
     }
 
 
-def evaluate_disturbance_experiment(
-    exp_data, exp_timestamps, disturbance_times
-):
+def evaluate_disturbance_experiment(exp_data, exp_timestamps, disturbance_times):
     """
     Splits the episode into segments: [start, d1), [d1, d2), ..., [dN, end].
     Success requires that EVERY segment contains a contiguous upright hold
@@ -158,7 +154,7 @@ def evaluate_disturbance_experiment(
     return {
         "uptime": uptime,
         "per_segment_success": per_segment_success,
-        "success": any(per_segment_success),
+        "success": all(per_segment_success),
     }
 
 
@@ -188,9 +184,7 @@ def analyze_file(path, disturbance=False, disturbance_times_all=None):
                 all_data[i], all_timestamps[i], times_source[i]
             )
         else:
-            res = evaluate_non_disturbance_experiment(
-                all_data[i], all_timestamps[i]
-            )
+            res = evaluate_non_disturbance_experiment(all_data[i], all_timestamps[i])
         per_experiment.append(res)
 
     successes = [r["success"] for r in per_experiment]
@@ -267,7 +261,7 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
     #     AND the stats annotation boxes, stacked with a clear gap.
     fig.subplots_adjust(top=0.78, bottom=0.32, wspace=0.30)
     fig.suptitle(
-        "Pendubot Swing-Up Performance Summary",
+        f"{SYSTEM.capitalize()} Swing-Up Performance Summary",
         fontsize=SUPTITLE_FONT,
         fontweight="bold",
         y=0.97,
@@ -326,9 +320,7 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
         ax.spines[spine].set_visible(False)
 
     ax.set_ylabel("Uptime", fontsize=LABEL_FONT)
-    ax.set_title(
-        "Uptime distribution across experiments", fontsize=TITLE_FONT, pad=14
-    )
+    ax.set_title("Uptime distribution across experiments", fontsize=TITLE_FONT, pad=14)
     ax.tick_params(axis="both", labelsize=TICK_FONT)
 
     # Small top headroom only, so the mean/median markers near the max
@@ -381,9 +373,7 @@ def plot_summary(nd_summary, d_summary, save_path="summary.pdf"):
     )
     ax2.set_ylim(0, 1.12)
     ax2.set_ylabel("Success rate", fontsize=LABEL_FONT)
-    ax2.set_title(
-        "Success rate by experiment type", fontsize=TITLE_FONT, pad=14
-    )
+    ax2.set_title("Success rate by experiment type", fontsize=TITLE_FONT, pad=14)
     ax2.tick_params(axis="both", labelsize=TICK_FONT)
     for spine in ("top", "right"):
         ax2.spines[spine].set_visible(False)

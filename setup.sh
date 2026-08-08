@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-mkdir -p data data-disturbance
+mkdir -p pendubot/data pendubot/data-disturbance
+mkdir -p acrobot/data acrobot/data-disturbance
