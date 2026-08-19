@@ -19,7 +19,7 @@
         <child link="joint1_sphere" />
         <origin xyz="0 0 0" />
         <axis xyz="1 0 0" />
-        <limit lower="-10000" upper="10000" effort="0" velocity="30" />
+        <limit lower="-10000" upper="10000" effort="0.15" velocity="50" />
         <dynamics damping="7.634058385430087e-12" friction="0.00305" />
     </joint>
 
@@ -49,9 +49,9 @@
             <origin xyz="0 0 -0.05" />
             <mass value="0.10548177618443695" />
             <inertia
-                ixx="0.00046166221821039165"
-                iyy="0.00046166221821039165"
-                izz="0.00046166221821039165"
+                ixx="0.00036166221821039165"
+                iyy="0.00036166221821039165"
+                izz="0.00036166221821039165"
                 ixy="0" ixz="0" iyz="0" />
         </inertial>
     </link>
@@ -62,7 +62,7 @@
         <child link="joint2_sphere" />
         <origin xyz="0 0 -0.05" />
         <axis xyz="1 0 0" />
-        <limit lower="-10000" upper="10000" effort="0.1" velocity="30" />
+        <limit lower="-10000" upper="10000" effort="0.15" velocity="50" />
         <dynamics damping="0.0005106535523065844" friction="0.0007777" />
     </joint>
 
